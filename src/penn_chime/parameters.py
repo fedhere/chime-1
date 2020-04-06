@@ -8,8 +8,9 @@ from collections import namedtuple
 from datetime import date
 from typing import Optional
 
-from .validators import (
-    Positive, OptionalStrictlyPositive, StrictlyPositive, Rate, Date, OptionalDate
+from validators import (
+    Positive, OptionalFile, OptionalBool,
+    OptionalStrictlyPositive, StrictlyPositive, Rate, Date, OptionalDate
     )
 
 # Parameters for each disposition (hospitalized, icu, ventilated)
@@ -55,7 +56,7 @@ class Parameters:
         hospitalized: Disposition,
         icu: Disposition,
         relative_contact_rate: float,
-        mitigation_date: Optional[date] = None,
+        mitigation_date: Optional[date] = date.today(),
         ventilated: Disposition,
         current_date: date = date.today(),
         date_first_hospitalized: Optional[date] = None,
@@ -67,6 +68,10 @@ class Parameters:
         population: Optional[int] = None,
         recovered: int = 0,
         region: Optional[Regions] = None,
+	input_file: Optional[str] = None,
+	varying_parameters: Optional[list] = None
+        mcmc = False
+
     ):
         self.current_hospitalized = Positive(value=current_hospitalized)
 
@@ -94,13 +99,13 @@ class Parameters:
 
         self.relative_contact_rate = Rate(value=relative_contact_rate)
         self.mitigation_date = OptionalDate(value=mitigation_date)
-
+        print(self.mitigation_date)
         self.infectious_days = StrictlyPositive(value=infectious_days)
         self.market_share = Rate(value=market_share)
         self.max_y_axis = OptionalStrictlyPositive(value=max_y_axis)
         self.n_days = StrictlyPositive(value=n_days)
         self.recovered = Positive(value=recovered)
-
+        self.mcmc = OptionalBool(value=mcmc)
         self.labels = {
             "hospitalized": "Hospitalized",
             "icu": "ICU",
@@ -117,3 +122,24 @@ class Parameters:
             "icu": icu,
             "ventilated": ventilated,
         }
+        self.input_file = OptionalFile(value=input_file)
+        
+    def printp(self):
+            print("current_hospitalized: ", self.current_hospitalized)
+            print("current_date: ", self.current_date)
+            print("date_first_hospitalized: ", self.date_first_hospitalized )
+            print("doubling_time: ", self.doubling_time)
+            print("relative_contact_rate: ", self.relative_contact_rate) 
+            print("mitigation_date: ", self.mitigation_date )
+            print("infectious_days: ", self.infectious_days)
+            print("market_share: ", self.market_share )
+            print("max_y_axis: ", self.max_y_axis )
+            print("n_days: ", self.n_days )
+            print("recovered: ", self.recovered )
+            print("mcmc: ", self.mcmc)            
+            for d in ["hospitalized", "icu", "ventilated"]:
+                print("dispositions: " + d, self.dispositions[d])            
+            
+            print("input file: ", self.input_file )
+
+            

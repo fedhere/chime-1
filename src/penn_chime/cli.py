@@ -8,10 +8,10 @@ from datetime import datetime
 
 from pandas import DataFrame
 
-from .constants import CHANGE_DATE
-from .parameters import Parameters, Disposition
-from .models import SimSirModel as Model
-
+from constants import CHANGE_DATE
+from parameters import Parameters, Disposition
+from models import SimSirModel as Model
+from optimizer import optimize
 
 class FromFile(Action):
     """From File."""
@@ -103,6 +103,14 @@ def parse_args():
             "Social distancing reduction rate: 0.0 - 1.0",
             True,
         ),
+        (
+            "--input_file",
+            str,
+            None,
+            None,
+            "input data to optimize parameters",
+            False,
+        ),
         ("--population", int, 1, None, "Regional population >= 1", True),
         ("--ventilated-days", int, 0, None, "Average days on ventilator", True),
         ("--ventilated-rate", float, 0.0, 1.0, "Ventilated Rate: 0.0 - 1.0", True),
@@ -113,6 +121,9 @@ def parse_args():
             help=help,
         )
     return parser.parse_args()
+
+
+
 
 
 def main():
@@ -128,13 +139,20 @@ def main():
         n_days=a.n_days,
         relative_contact_rate=a.relative_contact_rate,
         population=a.population,
-
         hospitalized=Disposition(a.hospitalized_rate, a.hospitalized_days),
         icu=Disposition(a.icu_rate, a.icu_days),
         ventilated=Disposition(a.ventilated_rate, a.ventilated_days),
+        input_file=a.input_file,
+        mcmc=a.mcmc
     )
 
-    m = Model(p)
+    if not a.input_file is None:
+        #m, newp =
+        optimize(p)
+
+    else:
+        m = Model(p)
+    '''
 
     for df, name in (
         (m.sim_sir_w_date_df, "sim_sir_w_date"),
@@ -143,6 +161,6 @@ def main():
     ):
         df.to_csv(f"{p.current_date}_{name}.csv")
 
-
+    '''
 if __name__ == "__main__":
     main()

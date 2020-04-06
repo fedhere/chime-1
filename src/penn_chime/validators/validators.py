@@ -67,3 +67,36 @@ class OptionalDate(Date):
         if value is None:
             return None
         super().validate(value)
+
+class OptionalString(Validator):
+    """A date of some sort."""
+    def __init__(self) -> None:
+        pass
+
+    def validate(self, value):
+        if not isinstance(value, str):
+            raise (ValueError(f"{value} must be a string"))
+
+class OptionalFile(Validator):
+    """Input file."""
+    def __init__(self) -> None:
+        pass
+    def validate(self, value):
+        if not isinstance(value, str):
+            raise (ValueError(f"{value} must be a string"))
+        try:
+            open(value)
+            return value
+        except IOError as e:
+            raise (ValueError(f"Could not open file {value}. Exception= %s" % e))
+
+class OptionalBook(Validator):
+    """Input file."""
+    def __init__(self) -> None:
+        pass
+    def validate(self, value):
+        if not isinstance(value, int) and not (value == 1 or value == 0):
+            raise (ValueError(f"{value} must be a 1 or 0"))
+        return value
+
+        

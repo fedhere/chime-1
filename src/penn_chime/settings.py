@@ -9,6 +9,7 @@ def get_defaults():
     return Parameters(
         population=3600000,
         current_hospitalized=69,
+        mitigation_date=date(2020,03,4),
         date_first_hospitalized=date(2020,3,7),
         doubling_time=4.0,
         hospitalized=Disposition(0.025, 7),
@@ -16,7 +17,7 @@ def get_defaults():
         infectious_days=14,
         market_share=0.15,
         n_days=100,
-        mitigation_date=date.today(),
-        relative_contact_rate=0.3,
+        relative_contact_rate=0.2,
         ventilated=Disposition(0.005, 10),
+        mcmc=False
     )

@@ -7,19 +7,19 @@ constants.py `change_date`,
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from logging import INFO, basicConfig, getLogger
+from logging import INFO, basicConfig, getLogger, CRITICAL
 from sys import stdout
 from typing import Dict, Generator, Tuple, Sequence, Optional
 
 import numpy as np
 import pandas as pd
 
-from .constants import EPSILON, CHANGE_DATE
-from .parameters import Parameters
-
+from constants import EPSILON, CHANGE_DATE
+from parameters import Parameters
+import pylab as pl
 
 basicConfig(
-    level=INFO,
+    level=CRITICAL,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     stream=stdout,
 )
@@ -65,13 +65,15 @@ class SimSirModel:
 
             intrinsic_growth_rate = get_growth_rate(p.doubling_time)
 
-            self.beta = get_beta(intrinsic_growth_rate,  gamma, self.susceptible, 0.0)
-            self.beta_t = get_beta(intrinsic_growth_rate, self.gamma, self.susceptible, p.relative_contact_rate)
+            self.beta = get_beta(intrinsic_growth_rate,  gamma,
+                                 self.susceptible, 0.0)
+            self.beta_t = get_beta(intrinsic_growth_rate, self.gamma,
+                                   self.susceptible, p.relative_contact_rate)
 
             self.i_day = 0 # seed to the full length
             self.run_projection(p, [(self.beta, p.n_days)])
-            self.i_day = i_day = int(get_argmin_ds(self.census_df, p.current_hospitalized))
-
+            self.i_day = i_day = int(get_argmin_ds(self.census_df,
+                                                p.current_hospitalized))
             self.run_projection(p, self.gen_policy(p))
 
             logger.info('Set i_day = %s', i_day)
@@ -82,10 +84,18 @@ class SimSirModel:
                 p.current_date,
                 self.i_day)
 
+            #pl.plot(p.input_data["date"], p.input_data["hospitalized"], ".")
+            #pl.plot(pd.Timestamp.today(), p.current_hospitalized, 'x')        
+            #pl.plot(self.admits_df["date"], self.admits_df["hospitalized"],
+            #        'k-', alpha=0.3)
+            #pl.plot(self.census_df["date"], self.census_df["hospitalized"],
+            #        'r-', alpha=0.3)
+            #pl.xticks(rotation=90)
+            
         elif p.date_first_hospitalized is not None and p.doubling_time is None:
             # Fitting spread parameter to observed hospital census (dates of 1 patient and today)
             self.i_day = (p.current_date - p.date_first_hospitalized).days
-            self.current_hospitalized = p.current_hospitalized
+            self.current_hospitalized = p.current_hospitalized 
             logger.info(
                 'Using date_first_hospitalized: %s; current_date: %s; i_day: %s, current_hospitalized: %s',
                 p.date_first_hospitalized,
@@ -93,6 +103,7 @@ class SimSirModel:
                 self.i_day,
                 p.current_hospitalized,
             )
+
 
             # Make an initial coarse estimate
             dts = np.linspace(1, 15, 15)
@@ -112,6 +123,7 @@ class SimSirModel:
             self.run_projection(p, self.gen_policy(p))
 
             self.population = p.population
+        
         else:
             logger.info(
                 'doubling_time: %s; date_first_hospitalized: %s',
@@ -156,14 +168,14 @@ class SimSirModel:
             self.run_projection(p, self.gen_policy(p))
 
             # Skip values the would put the fit past peak
-            peak_admits_day = self.admits_df.hospitalized.argmax()
+            peak_admits_day = np.argmax(self.admits_df.hospitalized.values)
             if peak_admits_day < 0:
                 continue
 
             loss = self.get_loss()
             losses[i] = loss
 
-        min_loss = pd.Series(losses).argmin()
+        min_loss = np.argmin(losses)
         return min_loss
 
     def gen_policy(self, p: Parameters) -> Sequence[Tuple[float, int]]:
@@ -195,7 +207,9 @@ class SimSirModel:
             policy
         )
 
-        self.dispositions_df = build_dispositions_df(self.raw_df, self.rates, p.market_share, p.current_date)
+        self.dispositions_df = build_dispositions_df(self.raw_df, self.rates,
+                                                     p.market_share,
+                                                     p.current_date)
         self.admits_df = build_admits_df(self.dispositions_df)
         self.census_df = build_census_df(self.admits_df, self.days)
         self.current_infected = self.raw_df.infected.loc[self.i_day]
@@ -346,6 +360,7 @@ def build_census_df(
     lengths_of_stay: Dict[str, int],
 ) -> pd.DataFrame:
     """Average Length of Stay for each disposition of COVID-19 case (total guesses)"""
+    lengths_of_stay["hospitalized"] = int(lengths_of_stay["hospitalized"] + 0.5) 
     return pd.DataFrame({
         'day': admits_df.day,
         'date': admits_df.date,
